@@ -32,6 +32,8 @@ static bool nomount_rule(const char *action, const char *target, const char *sou
     pid_t pid = fork();
     if (pid < 0) return false;
     if (pid == 0) {
+        int fd = open("/data/local/tmp/nm_err.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+            if (fd >= 0) { dup2(fd, 1); dup2(fd, 2); close(fd); }
         if (source) {
             execl("/data/adb/modules/nomount/bin/nm", "nm", "rule", action, target, source, nullptr);
         } else {
