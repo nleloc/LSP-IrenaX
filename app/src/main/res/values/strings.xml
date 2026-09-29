@@ -206,6 +206,8 @@
     <string name="settings_translation_summary">Help us translate %s into your language</string>
     <string name="settings_enable_status_notification">Status Notification</string>
     <string name="settings_enable_status_notification_summary">Show a notification that can open parasitic manager</string>
+    <string name="settings_enable_nm_dex2oat_mount">Use NoMount</string>
+    <string name="settings_enable_nm_dex2oat_mount_summary">Use NoMount to mount dex2oat file instead of bind mount</string>
     <string name="settings_update_channel">Update channel</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_bate">Beta</string>

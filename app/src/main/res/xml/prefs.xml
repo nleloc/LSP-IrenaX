@@ -117,6 +117,15 @@
             android:shouldDisableView="false"
             android:summary="@string/settings_enable_status_notification_summary"
             android:title="@string/settings_enable_status_notification" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            android:defaultValue="false"
+            android:icon="@drawable/ic_outline_linkoff_24"
+            android:key="enable_nm_dex2oat_mount"
+            android:persistent="false"
+            android:shouldDisableView="false"
+            android:summary="@string/settings_enable_nm_dex2oat_mount_summary"
+            android:title="@string/settings_enable_nm_dex2oat_mount" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_backup_and_restore">
