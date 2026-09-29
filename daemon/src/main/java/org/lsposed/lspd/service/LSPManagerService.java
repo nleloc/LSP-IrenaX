@@ -576,6 +576,16 @@ public class LSPManagerService extends ILSPManagerService.Stub {
     }
 
     @Override
+    public boolean getNmDex2oatMount() {
+        return ConfigManager.getInstance().nmDex2oatMount();
+    }
+
+    @Override
+    public void setNmDex2oatMount(boolean enabled) {
+        ConfigManager.getInstance().setNmDex2oatMount(enabled);
+    }
+
+    @Override
     public int getDex2OatWrapperCompatibility() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return ServiceManager.getDex2OatService().getCompatibility();

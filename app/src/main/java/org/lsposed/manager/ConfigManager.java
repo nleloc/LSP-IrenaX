@@ -411,6 +411,25 @@ public class ConfigManager {
         }
     }
 
+    public static boolean isNmDex2oatMountEnabled() {
+        try {
+            return LSPManagerServiceHolder.getService().getNmDex2oatMount();
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return false;
+        }
+    }
+
+    public static boolean setNmDex2oatMountEnabled(boolean enabled) {
+        try {
+            LSPManagerServiceHolder.getService().setNmDex2oatMount(enabled);
+            return true;
+        } catch (RemoteException e) {
+            Log.e(App.TAG, Log.getStackTraceString(e));
+            return false;
+        }
+    }
+
     public static int getDex2OatWrapperCompatibility() {
         try {
             return LSPManagerServiceHolder.getService().getDex2OatWrapperCompatibility();

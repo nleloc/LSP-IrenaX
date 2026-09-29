@@ -101,4 +101,8 @@ interface ILSPManagerService {
     boolean deleteModulePrefs(String packageName, int userId) = 54;
 
     void removeBlockedScopeRequest(String packageName, int userId) = 55;
+
+    boolean getNmDex2oatMount() = 56;
+
+    void setNmDex2oatMount(boolean enabled) = 57;
 }

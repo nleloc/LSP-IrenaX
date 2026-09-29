@@ -96,6 +96,7 @@ public class ConfigManager {
     private boolean verboseLog = true;
     private boolean modulesLog = true;
     private boolean dexObfuscate = true;
+    private boolean nmDex2oatMount = false;
     private boolean injectionHardening = true;
     private boolean enableStatusNotification = true;
     private Path miscPath = null;
@@ -275,6 +276,9 @@ public class ConfigManager {
 
         bool = config.get("enable_dex_obfuscate");
         dexObfuscate = bool == null || (boolean) bool;
+
+        bool = config.get("enable_nm_dex2oat_mount");
+        nmDex2oatMount = bool != null && (boolean) bool;
 
         bool = config.get("enable_status_notification");
         enableStatusNotification = bool == null || (boolean) bool;
@@ -1094,6 +1098,15 @@ public class ConfigManager {
 
     public boolean verboseLog() {
         return BuildConfig.DEBUG || verboseLog;
+    }
+
+    public void setNmDex2oatMount(boolean on) {
+        updateModulePrefs("lspd", 0, "config", "enable_nm_dex2oat_mount", on);
+        nmDex2oatMount = on;
+    }
+
+    public boolean nmDex2oatMount() {
+        return nmDex2oatMount;
     }
 
     public void setModulesLog(boolean on) {
