@@ -66,7 +66,7 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
 
         if (useNomount) {
             if (enabled) {
-                LOGI("Enable dex2oat wrapper via NoMount")
+                LOGI("Enable dex2oat wrapper via NoMount");
                 if (r32) nomount_rule("add", r32p, dex2oat32);
                 if (d32) nomount_rule("add", d32p, dex2oat32);
                 if (r64) nomount_rule("add", r64p, dex2oat64);
@@ -84,7 +84,7 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
             close(ns);
 
             if (enabled) {
-                LOGI("Enable dex2oat wrapper via bind mount")
+                LOGI("Enable dex2oat wrapper via bind mount");
                 if (r32) {
                     mount(dex2oat32, r32p, nullptr, MS_BIND, nullptr);
                     mount(nullptr, r32p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
