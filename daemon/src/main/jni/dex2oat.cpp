@@ -41,9 +41,11 @@ static bool nomount_rule(const char *action, const char *target, const char *sou
             else execlp("nm", "nm", "rule", action, target, nullptr);
         _exit(127); // execl failed
     }
-    int status;
+    int status = 0;
     waitpid(pid, &status, 0);
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    int code = WIFEXITED(status) ? WEXITSTATUS(status): -1;
+    LOGI("nm rule %s %s -> exit %d", action, target, code);
+    return code == 0;
 }
 
 static void set_dex2oat_flags(bool wrapperOn) {
