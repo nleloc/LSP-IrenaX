@@ -172,6 +172,16 @@ public class SettingsFragment extends BaseFragment {
                 });
             }
 
+            MaterialSwitchPreference prefNmDex2oatMount = findPreference("enable_nm_dex2oat_mount");
+            if (prefNmDex2oatMount != null) {
+                prefNmDex2oatMount.setEnabled(installed);
+                prefNmDex2oatMount.setChecked(installed && ConfigManager.isNmDex2oatMountEnabled());
+                prefNmDex2oatMount.setOnPreferenceChangeListener((preference, newValue) -> {
+                    parentFragment.showHint(R.string.reboot_required, true, R.string.reboot, v -> ConfigManager.reboot());
+                    return ConfigManager.setNmDex2oatMountEnabled((boolean) newValue);
+                });
+            }
+
             MaterialSwitchPreference notificationPreference = findPreference("enable_status_notification");
             if (notificationPreference != null) {
                 notificationPreference.setVisible(installed);

@@ -28,10 +28,26 @@
 
 #include "logging.h"
 
+static bool nomount_rule(const char *action, const char *target, const char *source = nullptr) {
+    pid_t pid = fork();
+    if (pid < 0) return false;
+    if (pid == 0) {
+        if (source) {
+            execl("/data/adb/modules/nomount/bin/nm", "nm", "rule", action, target, source, nullptr);
+        } else {
+            execl("/data/adb/modules/nomount/bin/nm", "nm", "rule", action, target, nullptr);
+        }
+        _exit(127); // execl failed
+    }
+    int status;
+    waitpid(pid, &status, 0);
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
-                                                           jboolean enabled,
+                                                           jboolean enabled, jboolean useNomount,
                                                            jstring r32, jstring d32,
                                                            jstring r64, jstring d64) {
     char dex2oat32[PATH_MAX], dex2oat64[PATH_MAX];
@@ -41,9 +57,6 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
     if (pid_t pid = fork(); pid > 0) { // parent
         waitpid(pid, nullptr, 0);
     } else { // child
-        int ns = open("/proc/1/ns/mnt", O_RDONLY);
-        setns(ns, CLONE_NEWNS);
-        close(ns);
 
         const char *r32p, *d32p, *r64p, *d64p;
         if (r32) r32p = env->GetStringUTFChars(r32, nullptr);
@@ -51,30 +64,50 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
         if (r64) r64p = env->GetStringUTFChars(r64, nullptr);
         if (d64) d64p = env->GetStringUTFChars(d64, nullptr);
 
-        if (enabled) {
-            LOGI("Enable dex2oat wrapper");
-            if (r32) {
-                mount(dex2oat32, r32p, nullptr, MS_BIND, nullptr);
-                mount(nullptr, r32p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
-            }
-            if (d32) {
-                mount(dex2oat32, d32p, nullptr, MS_BIND, nullptr);
-                mount(nullptr, d32p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
-            }
-            if (r64) {
-                mount(dex2oat64, r64p, nullptr, MS_BIND, nullptr);
-                mount(nullptr, r64p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
-            }
-            if (d64) {
-                mount(dex2oat64, d64p, nullptr, MS_BIND, nullptr);
-                mount(nullptr, d64p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
+        if (useNomount) {
+            if (enabled) {
+                LOGI("Enable dex2oat wrapper via NoMount")
+                if (r32) nomount_rule("add", r32p, dex2oat32);
+                if (d32) nomount_rule("add", d32p, dex2oat32);
+                if (r64) nomount_rule("add", r64p, dex2oat64);
+                if (d64) nomount_rule("add", d64p, dex2oat64);
+            } else {
+                LOGI("Disable dex2oat wrapper via NoMount");
+                if (r32) nomount_rule("del", r32p);
+                if (d32) nomount_rule("del", d32p);
+                if (r64) nomount_rule("del", r64p);
+                if (d64) nomount_rule("del", d64p);
             }
         } else {
-            LOGI("Disable dex2oat wrapper");
-            if (r32) umount(r32p);
-            if (d32) umount(d32p);
-            if (r64) umount(r64p);
-            if (d64) umount(d64p);
+            int ns = open("/proc/1/ns/mnt", O_RDONLY);
+            setns(ns, CLONE_NEWNS);
+            close(ns);
+
+            if (enabled) {
+                LOGI("Enable dex2oat wrapper via bind mount")
+                if (r32) {
+                    mount(dex2oat32, r32p, nullptr, MS_BIND, nullptr);
+                    mount(nullptr, r32p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
+                }
+                if (d32) {
+                    mount(dex2oat32, d32p, nullptr, MS_BIND, nullptr);
+                    mount(nullptr, d32p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
+                }
+                if (r64) {
+                    mount(dex2oat64, r64p, nullptr, MS_BIND, nullptr);
+                    mount(nullptr, r64p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
+                }
+                if (d64) {
+                    mount(dex2oat64, d64p, nullptr, MS_BIND, nullptr);
+                    mount(nullptr, d64p, nullptr, MS_BIND | MS_REMOUNT | MS_RDONLY, nullptr);
+                }
+            } else {
+                LOGI("Disable dex2oat wrapper");
+                if (r32) umount(r32p);
+                if (d32) umount(d32p);
+                if (r64) umount(r64p);
+                if (d64) umount(d64p);
+            }
         }
 
         PLOGE("Failed to resetprop");

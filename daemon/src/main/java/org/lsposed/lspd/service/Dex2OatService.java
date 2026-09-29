@@ -161,7 +161,8 @@ public class Dex2OatService implements Runnable {
     }
 
     private void doMount(boolean enabled) {
-        doMountNative(enabled, dex2oatArray[0], dex2oatArray[1], dex2oatArray[2], dex2oatArray[3]);
+        boolean useNomount = ConfigManager.getInstance().nmDex2oatMount();
+        doMountNative(enabled, useNomount, dex2oatArray[0], dex2oatArray[1], dex2oatArray[2], dex2oatArray[3]);
     }
     
     private boolean isInDenylistFromClasspathDirJava(String classpathDirArg) {
@@ -437,7 +438,7 @@ public class Dex2OatService implements Runnable {
         return compatibility;
     }
 
-    private native void doMountNative(boolean enabled,
+    private native void doMountNative(boolean enabled, boolean useNomount,
                                       String r32, String d32, String r64, String d64);
 
     private static native boolean setSockCreateContext(String context);
