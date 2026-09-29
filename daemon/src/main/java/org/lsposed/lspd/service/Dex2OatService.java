@@ -141,6 +141,7 @@ public class Dex2OatService implements Runnable {
     }
 
     private boolean notMounted() {
+        if (ConfigManager.getInstance().nmDex2oatMount()) return !nmAddOk;
         for (int i = 0; i < dex2oatArray.length && i < 4; i++) {
             var bin = dex2oatArray[i];
             if (bin == null) continue;
@@ -160,9 +161,13 @@ public class Dex2OatService implements Runnable {
         return false;
     }
 
+    private boolean nmAddOk = false;
+
     private void doMount(boolean enabled) {
         boolean useNomount = ConfigManager.getInstance().nmDex2oatMount();
-        doMountNative(enabled, useNomount, dex2oatArray[0], dex2oatArray[1], dex2oatArray[2], dex2oatArray[3]);
+        boolean ok = doMountNative(enabled, useNomount,
+            dex2oatArray[0], dex2oatArray[1], dex2oatArray[2], dex2oatArray[3]);
+        if (useNomount && enabled) nmAddOk = ok;
     }
     
     private boolean isInDenylistFromClasspathDirJava(String classpathDirArg) {
@@ -438,7 +443,7 @@ public class Dex2OatService implements Runnable {
         return compatibility;
     }
 
-    private native void doMountNative(boolean enabled, boolean useNomount,
+    private native boolean doMountNative(boolean enabled, boolean useNomount,
                                       String r32, String d32, String r64, String d64);
 
     private static native boolean setSockCreateContext(String context);

@@ -37,6 +37,8 @@ static bool nomount_rule(const char *action, const char *target, const char *sou
         } else {
             execl("/data/adb/modules/nomount/bin/nm", "nm", "rule", action, target, nullptr);
         }
+        if (source) execlp("nm", "nm", "rule", action, target, source, nullptr);
+            else execlp("nm", "nm", "rule", action, target, nullptr);
         _exit(127); // execl failed
     }
     int status;
@@ -44,8 +46,20 @@ static bool nomount_rule(const char *action, const char *target, const char *sou
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
+static void set_dex2oat_flags(bool wrapperOn) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (wrapperOn)
+            execlp("resetprop", "resetprop", "--delete", "dalvik.vm.dex2oat-flags", nullptr);
+        else
+            execlp("resetprop", "resetprop", "dalvik.vm.dex2oat-flags", "--inline-max-code-units=0", nullptr);
+        _exit(127);
+    }
+    if (pid > 0) waitpid(pid, nullptr, 0);
+}
+
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
                                                            jboolean enabled, jboolean useNomount,
                                                            jstring r32, jstring d32,
@@ -55,7 +69,9 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
     realpath("bin/dex2oat64", dex2oat64);
 
     if (pid_t pid = fork(); pid > 0) { // parent
-        waitpid(pid, nullptr, 0);
+        int st = 0;
+        waitpid(pid, &st, 0);
+        return WIFEXITED(st) && WEXITSTATUS(st) == 0;
     } else { // child
 
         const char *r32p, *d32p, *r64p, *d64p;
@@ -65,19 +81,24 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
         if (d64) d64p = env->GetStringUTFChars(d64, nullptr);
 
         if (useNomount) {
+            bool ok = true;
             if (enabled) {
                 LOGI("Enable dex2oat wrapper via NoMount");
-                if (r32) nomount_rule("add", r32p, dex2oat32);
-                if (d32) nomount_rule("add", d32p, dex2oat32);
-                if (r64) nomount_rule("add", r64p, dex2oat64);
-                if (d64) nomount_rule("add", d64p, dex2oat64);
+                if (r32) ok &= nomount_rule("add", r32p, dex2oat32);
+                if (d32) ok &= nomount_rule("add", d32p, dex2oat32);
+                if (r64) ok &= nomount_rule("add", r64p, dex2oat64);
+                if (d64) ok &= nomount_rule("add", d64p, dex2oat64);
+                if (!ok) LOGE("nm rule add failed");
+                set_dex2oat_flags(true);
             } else {
                 LOGI("Disable dex2oat wrapper via NoMount");
                 if (r32) nomount_rule("del", r32p);
                 if (d32) nomount_rule("del", d32p);
                 if (r64) nomount_rule("del", r64p);
                 if (d64) nomount_rule("del", d64p);
+                set_dex2oat_flags(false);
             }
+            _exit(ok ? 0 : 1);
         } else {
             int ns = open("/proc/1/ns/mnt", O_RDONLY);
             setns(ns, CLONE_NEWNS);
@@ -113,6 +134,7 @@ Java_org_lsposed_lspd_service_Dex2OatService_doMountNative(JNIEnv *env, jobject,
         PLOGE("Failed to resetprop");
         exit(1);
     }
+    return JNI_FALSE;
 }
 
 static int setsockcreatecon_raw(const char *context) {
